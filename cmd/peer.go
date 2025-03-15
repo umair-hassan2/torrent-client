@@ -3,15 +3,16 @@ package torrent
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"net"
 )
 
 type Peer struct {
 	peerId string
-	ip     string
+	ip     net.IP
 	port   int
 }
 
-func NewPeer(peerId string, ip string, port int) *Peer {
+func NewPeer(peerId string, ip net.IP, port int) *Peer {
 	return &Peer{
 		peerId: peerId,
 		ip:     ip,

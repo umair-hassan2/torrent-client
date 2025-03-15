@@ -3,4 +3,4 @@ build:
 run:
 	./bin/main
 test:
-	go test ./...
+	go test ./... -v
