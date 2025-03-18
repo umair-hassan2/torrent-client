@@ -1,9 +1,6 @@
 package torrent
 
-import (
-	"net"
-	"time"
-)
+import "io"
 
 type Con struct {
 	timeOut int
@@ -23,16 +20,12 @@ type HandShake struct {
 	pstr     string // BitTorrent protocol
 }
 
-func (con *TcpCon) Dial(remoteAddr string) (net.Conn, error) {
-	return net.DialTimeout(con.tp, remoteAddr, time.Duration(con.timeOut)*time.Second)
-}
-
-func CreateTcpCon(timeOut int) *TcpCon {
-	return &TcpCon{Con{timeOut, "tcp"}}
-}
-
-func CreateUdpCon(timeOut int) *UdpCon {
-	return &UdpCon{Con{timeOut, "udp"}}
+func NewHandShake(infoHash, peerId [20]byte) *HandShake {
+	return &HandShake{
+		infoHash: infoHash,
+		peerId:   peerId,
+		pstr:     "BitTorrent protocol",
+	}
 }
 
 // build a handshake buffer
@@ -53,12 +46,36 @@ func (h *HandShake) Serialize() []byte {
 	return buf
 }
 
-func DeSerializeHandshake(buf []byte) HandShake {
-	pstrLen := int(buf[0])
-	pstr := string(buf[1 : pstrLen+1])
-	infoHash := [20]byte{}
-	copy(infoHash[:], buf[pstrLen+1+8:pstrLen+1+8+20])
-	peerId := [20]byte{}
-	copy(peerId[:], buf[pstrLen+1+8+20:])
-	return HandShake{infoHash, peerId, pstr}
+func ReadHandShake(conn io.Reader) (*HandShake, error) {
+	// read length of protocol identifier
+	lengthBuf := make([]byte, 1)
+	_, err := io.ReadFull(conn, lengthBuf)
+	if err != nil {
+		return nil, err
+	}
+
+	// read protocol identifier string
+	pstrBuf := make([]byte, int(lengthBuf[0]))
+	_, err = io.ReadFull(conn, pstrBuf)
+	if err != nil {
+		return nil, err
+	}
+
+	// read remaining data from connection
+	handShakeBuf := make([]byte, 48)
+	_, err = io.ReadFull(conn, handShakeBuf)
+	if err != nil {
+		return nil, err
+	}
+
+	var infoHash, peerId [20]byte
+	copy(infoHash[:], handShakeBuf[8:8+20])
+	copy(peerId[:], handShakeBuf[8+20:8+20+20])
+	handShake := HandShake{
+		infoHash: infoHash,
+		peerId:   peerId,
+		pstr:     string(pstrBuf),
+	}
+
+	return &handShake, nil
 }

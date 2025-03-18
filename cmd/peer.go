@@ -3,6 +3,7 @@ package torrent
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"net"
 )
 
@@ -18,6 +19,10 @@ func NewPeer(peerId string, ip net.IP, port int) *Peer {
 		ip:     ip,
 		port:   port,
 	}
+}
+
+func (p Peer) String() string {
+	return fmt.Sprintf("%s:%d", p.ip.String(), p.port)
 }
 
 func RandomPeerId() ([]byte, error) {

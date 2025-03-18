@@ -27,6 +27,17 @@ type Message struct {
 	Length  uint32
 }
 
+type PieceWork struct {
+	index  int
+	hash   []byte
+	length int
+}
+
+type PieceResult struct {
+	index  int
+	result []byte
+}
+
 // bit field messages is an array of bytes
 type BitField []byte
 
@@ -40,14 +51,14 @@ func (m *Message) Serialize() []byte {
 }
 
 // read message from stream
-func Read(stream *io.Reader) (*Message, error) {
+func Read(stream io.Reader) (*Message, error) {
 	var length uint32
-	err := binary.Read(*stream, binary.BigEndian, &length)
+	err := binary.Read(stream, binary.BigEndian, &length)
 	if err != nil {
 		return nil, err
 	}
 	buf := make([]byte, length)
-	_, err = io.ReadFull(*stream, buf)
+	_, err = io.ReadFull(stream, buf)
 	if err != nil {
 		return &Message{}, err
 	}
@@ -78,4 +89,30 @@ func (bf *BitField) SetPiece(pieceIndex int) {
 	}
 
 	(*bf)[byteIndex] |= 1 << (7 - bitIndex)
+}
+
+func findMessagebyId(messageId uint8) (ans string) {
+	switch messageId {
+	case MsgChoke:
+		ans = "Choke Message"
+	case MsgUnChoke:
+		ans = "UnChoke Message"
+	case MsgInterested:
+		ans = "Interested Message"
+	case MsgNotInterested:
+		ans = "Not Interested Message"
+	case MsgHave:
+		ans = "Have Message"
+	case MsgBitfield:
+		ans = "Bitfield Message"
+	case MsgRequest:
+		ans = "Request Message"
+	case MsgPiece:
+		ans = "Piece Message"
+	case MsgCancel:
+		ans = "Cancel Message"
+	default:
+		ans = "Not Supported Message"
+	}
+	return ans
 }
