@@ -96,3 +96,48 @@ func New(peer Peer, peerId, infoHash [20]byte) (*Client, error) {
 	}
 	return &newClient, nil
 }
+
+// there are basic 9 types of messages
+func (c *Client) SendHave(pieceIndex int) error {
+	message := FormatHaveMessage(pieceIndex)
+	_, err := c.Con.Write(message.Serialize())
+	return err
+}
+
+func (c *Client) SendChoke() error {
+	message := Message{
+		Id: MsgChoke,
+	}
+	_, err := c.Con.Write(message.Serialize())
+	return err
+}
+
+func (c *Client) SendUnChoke() error {
+	message := Message{
+		Id: MsgUnChoke,
+	}
+	_, err := c.Con.Write(message.Serialize())
+	return err
+}
+
+func (c *Client) SendInterested() error {
+	message := Message{
+		Id: MsgInterested,
+	}
+	_, err := c.Con.Write(message.Serialize())
+	return err
+}
+
+func (c *Client) SendNotInterested() error {
+	message := Message{
+		Id: MsgNotInterested,
+	}
+	_, err := c.Con.Write(message.Serialize())
+	return err
+}
+
+func (c *Client) SendRequest(pieceIndex, begin, length int) error {
+	message := FormatRequestMessage(pieceIndex, begin, length)
+	_, err := c.Con.Write(message.Serialize())
+	return err
+}

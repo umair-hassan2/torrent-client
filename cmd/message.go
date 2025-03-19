@@ -27,17 +27,6 @@ type Message struct {
 	Length  uint32
 }
 
-type PieceWork struct {
-	index  int
-	hash   []byte
-	length int
-}
-
-type PieceResult struct {
-	index  int
-	result []byte
-}
-
 // bit field messages is an array of bytes
 type BitField []byte
 
@@ -115,4 +104,30 @@ func findMessagebyId(messageId uint8) (ans string) {
 		ans = "Not Supported Message"
 	}
 	return ans
+}
+
+func FormatHaveMessage(pieceIndex int) *Message {
+	payload := make([]byte, 4)
+	binary.BigEndian.PutUint32(payload[:], uint32(pieceIndex))
+	return &Message{
+		Id:      MsgHave,
+		Length:  4 + 1,
+		Payload: payload,
+	}
+}
+
+func FormatRequestMessage(pieceIndex, beg, len int) *Message {
+	// request payload has three main parts:
+	// 1. Piece Index - 4 bytes
+	// 2. Piece offset - 4 bytes
+	// 3. Block Length - 4 bytes
+	payload := make([]byte, 12)
+	binary.BigEndian.PutUint32(payload[0:4], uint32(pieceIndex))
+	binary.BigEndian.PutUint32(payload[4:8], uint32(beg))
+	binary.BigEndian.PutUint32(payload[8:], uint32(len))
+	return &Message{
+		Id:      MsgRequest,
+		Length:  1 + 12,
+		Payload: payload,
+	}
 }
