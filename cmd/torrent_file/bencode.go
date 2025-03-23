@@ -1,13 +1,15 @@
-package torrent
+package torrent_file
 
 import (
 	"encoding/binary"
-	"errors"
+	"fmt"
 	"io"
 	"net"
 	"strings"
 
-	"github.com/jackpal/bencode-go"
+	bencode "github.com/jackpal/bencode-go"
+	"github.com/umair-hassan2/torrent-client/cmd/common"
+	"github.com/umair-hassan2/torrent-client/pkg/types"
 )
 
 type bencodeInfo struct {
@@ -23,7 +25,7 @@ type bencodeTorrentFile struct {
 	Info     bencodeInfo `bencode:"info"`
 }
 
-type bencodeCompactTrackerResponse struct {
+type BencodeCompactTrackerResponse struct {
 	Interval int    `bencode:"interval"`
 	Peers    []byte `bencode:"peers"`
 }
@@ -50,25 +52,25 @@ func (btf *bencodeTorrentFile) GetHashPieces() (hashPieces [][20]byte) {
 }
 
 // parse tracker response
-func ParseTrackerResponse(response string) (bencodeCompactTrackerResponse, error) {
-	trackerResponse := bencodeCompactTrackerResponse{}
+func ParseTrackerResponse(response string) (BencodeCompactTrackerResponse, error) {
+	trackerResponse := BencodeCompactTrackerResponse{}
 	err := bencode.Unmarshal(strings.NewReader(response), &trackerResponse)
 	if err != nil {
-		return bencodeCompactTrackerResponse{}, err
+		return BencodeCompactTrackerResponse{}, err
 	}
 
 	return trackerResponse, nil
 }
 
 // load list of remote peers from compact tracker response
-func (btr *bencodeCompactTrackerResponse) GetRemotePeers() ([]*Peer, error) {
+func (btr *BencodeCompactTrackerResponse) GetRemotePeers() ([]*types.Peer, error) {
 	peerEntrySize := 6
 	totalPeers := len(btr.Peers) / peerEntrySize
 	if len(btr.Peers)%totalPeers != 0 {
-		return nil, errors.New("Invalid Peer bin size")
+		return nil, fmt.Errorf("peer size is invalid")
 	}
 
-	remotePeers := make([]*Peer, totalPeers)
+	remotePeers := make([]*types.Peer, totalPeers)
 
 	// first 4 bytes = ip address
 	// last 2 bytes = port number
@@ -76,11 +78,7 @@ func (btr *bencodeCompactTrackerResponse) GetRemotePeers() ([]*Peer, error) {
 		offset := i * peerEntrySize
 		ipBytes := btr.Peers[offset : offset+4]
 		portBytes := btr.Peers[offset+4 : offset+6]
-		remotePeers[i] = &Peer{
-			peerId: "",
-			ip:     net.IP(ipBytes),
-			port:   int(binary.BigEndian.Uint16(portBytes)),
-		}
+		remotePeers[i] = common.NewPeer("", net.IP(ipBytes), int(binary.BigEndian.Uint16(portBytes)))
 	}
 	return remotePeers, nil
 }

@@ -1,18 +1,22 @@
-package torrent
+package client
 
 import (
 	"bytes"
 	"fmt"
 	"net"
 	"time"
+
+	"github.com/umair-hassan2/torrent-client/cmd/common"
+	"github.com/umair-hassan2/torrent-client/cmd/message"
+	"github.com/umair-hassan2/torrent-client/pkg/types"
 )
 
 type Client struct {
 	Con      net.Conn
 	peerId   [20]byte
 	infoHash [20]byte
-	peer     Peer
-	bitField BitField
+	peer     types.Peer
+	bitField message.BitField
 	Choked   bool
 }
 
@@ -43,32 +47,32 @@ func StartHandShake(con net.Conn, infoHash, peerId [20]byte) error {
 	return nil
 }
 
-func readBitFieldMessage(conn net.Conn) (BitField, error) {
+func readBitFieldMessage(conn net.Conn) (message.BitField, error) {
 	// set time outs
 	conn.SetDeadline(time.Now().Add(time.Second * 3))
 	defer conn.SetDeadline(time.Time{})
 
 	// Read message from the connection
-	message, err := Read(conn)
+	msg, err := message.Read(conn)
 	if err != nil {
 		return nil, err
 	}
 
-	if message == nil {
-		return nil, fmt.Errorf("Expected a bit field message but received null message")
+	if msg == nil {
+		return nil, fmt.Errorf("expected a bit field message but received null message")
 	}
 
 	// verify that this message is a bitfield message
-	if message.Id == MsgBitfield {
-		return nil, fmt.Errorf("Expected a bit field message but received %s", findMessagebyId(message.Id))
+	if msg.Id == message.MsgBitfield {
+		return nil, fmt.Errorf("expected a bit field message but received %s", message.FindMessagebyId(msg.Id))
 	}
 
-	return message.Payload, nil
+	return msg.Payload, nil
 }
 
-func New(peer Peer, peerId, infoHash [20]byte) (*Client, error) {
+func New(peer types.Peer, peerId, infoHash [20]byte) (*Client, error) {
 	// open a tcp connection
-	con, err := net.DialTimeout("tcp", peer.String(), 3*time.Millisecond)
+	con, err := net.DialTimeout("tcp", common.PeerAdress(peer), 3*time.Millisecond)
 	if err != nil {
 		return nil, err
 	}
@@ -99,45 +103,45 @@ func New(peer Peer, peerId, infoHash [20]byte) (*Client, error) {
 
 // there are basic 9 types of messages
 func (c *Client) SendHave(pieceIndex int) error {
-	message := FormatHaveMessage(pieceIndex)
+	message := message.FormatHaveMessage(pieceIndex)
 	_, err := c.Con.Write(message.Serialize())
 	return err
 }
 
 func (c *Client) SendChoke() error {
-	message := Message{
-		Id: MsgChoke,
+	message := message.Message{
+		Id: message.MsgChoke,
 	}
 	_, err := c.Con.Write(message.Serialize())
 	return err
 }
 
 func (c *Client) SendUnChoke() error {
-	message := Message{
-		Id: MsgUnChoke,
+	message := message.Message{
+		Id: message.MsgUnChoke,
 	}
 	_, err := c.Con.Write(message.Serialize())
 	return err
 }
 
 func (c *Client) SendInterested() error {
-	message := Message{
-		Id: MsgInterested,
+	message := message.Message{
+		Id: message.MsgInterested,
 	}
 	_, err := c.Con.Write(message.Serialize())
 	return err
 }
 
 func (c *Client) SendNotInterested() error {
-	message := Message{
-		Id: MsgNotInterested,
+	message := message.Message{
+		Id: message.MsgNotInterested,
 	}
 	_, err := c.Con.Write(message.Serialize())
 	return err
 }
 
 func (c *Client) SendRequest(pieceIndex, begin, length int) error {
-	message := FormatRequestMessage(pieceIndex, begin, length)
+	message := message.FormatRequestMessage(pieceIndex, begin, length)
 	_, err := c.Con.Write(message.Serialize())
 	return err
 }

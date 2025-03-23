@@ -1,4 +1,4 @@
-package torrent
+package message
 
 import (
 	"encoding/binary"
@@ -80,7 +80,7 @@ func (bf *BitField) SetPiece(pieceIndex int) {
 	(*bf)[byteIndex] |= 1 << (7 - bitIndex)
 }
 
-func findMessagebyId(messageId uint8) (ans string) {
+func FindMessagebyId(messageId uint8) (ans string) {
 	switch messageId {
 	case MsgChoke:
 		ans = "Choke Message"
