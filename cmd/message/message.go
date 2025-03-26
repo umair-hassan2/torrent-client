@@ -2,6 +2,7 @@ package message
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 )
 
@@ -25,6 +26,13 @@ type Message struct {
 	Payload []byte
 	Id      uint8
 	Length  uint32
+}
+
+type PieceMessage struct {
+	Message
+	PieceIndex int
+	Offset     int
+	BlockData  []byte
 }
 
 // bit field messages is an array of bytes
@@ -130,4 +138,32 @@ func FormatRequestMessage(pieceIndex, beg, len int) *Message {
 		Length:  1 + 12,
 		Payload: payload,
 	}
+}
+
+func FormatPieceMessage() *Message {
+	return nil
+}
+
+// returns the piece sent by remote peer
+func ParseHaveMessage(message *Message) int {
+	return int(binary.BigEndian.Uint32(message.Payload))
+}
+
+// payload:
+//  1. Piece Index - 4 bytes
+//  2. Offset - 4 bytes
+//  3. Block Data - variable length
+func ParsePieceMessage(message *Message) (PieceMessage, error) {
+	if len(message.Payload) < 8 {
+		return PieceMessage{}, fmt.Errorf("piece message payload is too short")
+	}
+
+	// parse payload
+	pieceMessage := PieceMessage{
+		Message:    *message,
+		PieceIndex: int(binary.BigEndian.Uint32(message.Payload[0:4])),
+		Offset:     int(binary.BigEndian.Uint32(message.Payload[4:8])),
+		BlockData:  message.Payload[8:],
+	}
+	return pieceMessage, nil
 }

@@ -30,3 +30,11 @@ func CalculatePieceBounds(pieceIndex, pieceLength, fileLength int) (int, int) {
 	lastIndex := min((pieceIndex+1)*pieceLength, fileLength)
 	return startIndex, lastIndex
 }
+
+func AddTo(value *int, howMuch int) {
+	(*value) += howMuch
+}
+
+func DecFrom(value *int, howMuch int) {
+	(*value) -= howMuch
+}

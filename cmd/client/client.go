@@ -13,10 +13,10 @@ import (
 
 type Client struct {
 	Con      net.Conn
-	peerId   [20]byte
-	infoHash [20]byte
-	peer     types.Peer
-	bitField message.BitField
+	PeerId   [20]byte
+	InfoHash [20]byte
+	Peer     types.Peer
+	BitField message.BitField
 	Choked   bool
 }
 
@@ -91,10 +91,10 @@ func New(peer types.Peer, peerId, infoHash [20]byte) (*Client, error) {
 	}
 
 	newClient := Client{
-		peerId:   peerId,
-		peer:     peer,
-		infoHash: infoHash,
-		bitField: bitFieldMessage,
+		PeerId:   peerId,
+		Peer:     peer,
+		InfoHash: infoHash,
+		BitField: bitFieldMessage,
 		Con:      con,
 		Choked:   true, // peer is choked by default
 	}

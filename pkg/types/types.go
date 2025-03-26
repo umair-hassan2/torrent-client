@@ -27,3 +27,9 @@ type PieceResult struct {
 	Index int
 	Data  []byte
 }
+
+type DownloadingState struct {
+	Downloaded int
+	Retries    int
+	Result     []byte
+}
